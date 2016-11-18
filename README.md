@@ -11,7 +11,7 @@ directories).
 
 ## Installation
 
-```
+```sh
 npm i
 ```
 
@@ -19,7 +19,7 @@ npm i
 
 ## Running Tests
 
-```
+```sh
 # with npm
 npm test [--] [args]
 
@@ -31,7 +31,7 @@ Custom flags were added to the `karma.conf` to make things a little easier. You
 can view those extra options by running the below commands. Take note that `help`
 is a reserved flag for Karma, so `halp` is used instead.
 
-```
+```sh
 npm test -- --halp
 
 # OR
