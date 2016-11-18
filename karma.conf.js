@@ -107,7 +107,7 @@ module.exports = function(karmaConfig) {
       resolve: appConfig.webpack.resolve, // exposes path alias' to Webpack
       module: {
         loaders: [
-          // transpile test & ES6 JS files
+          // allow for loading of legacy scripts
           {
             test: /\.js$/,
             exclude: [
