@@ -1,3 +1,5 @@
+window.namespace.load('SRC_SCRIPTS/es5/util.js');
+
 window.namespace.Es5Class = function(opts){
   this.init(opts);
 }
@@ -8,6 +10,6 @@ window.namespace.Es5Class.prototype = {
   
     this.namespace = opts.namespace || 'exampleClass';
     
-    console.log('Es5 class initializing');
+    window.namespace.util.log('Es5 class initializing');
   }
 };

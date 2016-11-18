@@ -39,7 +39,7 @@ describe('Es5Class', () => {
     });
     
     it("should initialize the component", () => {
-      const logStub = sandbox.stub(window.console, 'log');
+      const logStub = sandbox.stub(window.namespace.util, 'log');
       const opts = {
         namespace: 'test'
       };

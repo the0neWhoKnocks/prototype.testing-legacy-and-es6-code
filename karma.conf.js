@@ -1,5 +1,4 @@
 var path = require('path');
-var BabelPluginIstanbul = require('babel-plugin-istanbul').default;
 var flags = require('minimist')(process.argv.slice(2));
 var appConfig = require('./app.conf.js');
 var logLevels = {
@@ -10,13 +9,18 @@ var logLevels = {
   'warn': 'LOG_WARN'
 };
 var logOpts = ['debug', 'disable', 'error', 'info', 'warn'];
-
+var karmaPort = 9876;
 
 // == parse the flags ==========================================================
 for(var key in flags){
   var val = flags[key];
   
   switch(key){
+    case 'b' :
+    case 'browser' :
+      flags.browser = val;
+      break;
+    
     case 'l' :
     case 'log' :
       if( val && RegExp(`^(${logOpts.join('|')})$`, 'i').test(val) ){
@@ -61,6 +65,8 @@ module.exports = function(karmaConfig) {
       // load any vendor files for use within tests
       `${appConfig.paths.PUBLIC_SCRIPTS}/vendor/jquery.min.js`,
       `${appConfig.paths.PUBLIC_SCRIPTS}/vendor/handlebars.min.js`,
+      // any legacy files that could possibly be proxied in, need to be loaded for karma reference (just not included)
+      { pattern: `${appConfig.paths.SRC_SCRIPTS}/**/!(*.babel)*.js`, included: false },
       // bootstraps code and transpiles es6 tests files
       `${appConfig.paths.SRC_SCRIPTS}/karma.bootstrap.babel.js`
     ],
@@ -78,6 +84,7 @@ module.exports = function(karmaConfig) {
       'karma-coverage',
       'karma-mocha',
       'karma-mocha-reporter',
+      'karma-chrome-launcher',
       'karma-phantomjs-launcher',
       'karma-webpack'
     ],
@@ -86,6 +93,11 @@ module.exports = function(karmaConfig) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       '**/karma.bootstrap.babel.js': ['webpack'], // use Webpack to transpile es6 files
+    },
+    
+    proxies: {
+      // allow for aliased script paths to be used for loaders in legacy scripts
+      '/SRC_SCRIPTS/': `http://localhost:${karmaPort}/base/src/js/`
     },
     
     // Report all the tests that are slower than given time limit (in ms).
@@ -109,7 +121,7 @@ module.exports = function(karmaConfig) {
                 ['istanbul', { // adds coverage for es5 files
                   'exclude': [
                     '**/*.test.js',
-                    "**/karma.bootstrap.babel.js"
+                    '**/karma.bootstrap.babel.js'
                   ]
                 }]
               ]
@@ -131,7 +143,7 @@ module.exports = function(karmaConfig) {
                 ['istanbul', { // adds coverage for es6 files
                   'exclude': [
                     '**/*.test.js',
-                    "**/karma.bootstrap.babel.js"
+                    '**/karma.bootstrap.babel.js'
                   ]
                 }]
               ]
@@ -184,7 +196,7 @@ module.exports = function(karmaConfig) {
     },
     
     // web server port
-    port: 9876,
+    port: karmaPort,
 
     // enable / disable colors in the output (reporters and logs)
     colors: true,
@@ -198,7 +210,7 @@ module.exports = function(karmaConfig) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['PhantomJS'],
+    browsers: [flags.browser || 'PhantomJS'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
