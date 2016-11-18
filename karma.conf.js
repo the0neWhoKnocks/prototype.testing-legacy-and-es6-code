@@ -63,8 +63,7 @@ module.exports = function(karmaConfig) {
     // list of files / patterns to load in the browser
     files: [
       // load any vendor files for use within tests
-      `${appConfig.paths.PUBLIC_SCRIPTS}/vendor/jquery.min.js`,
-      `${appConfig.paths.PUBLIC_SCRIPTS}/vendor/handlebars.min.js`,
+      `${appConfig.paths.PUBLIC_SCRIPTS}/vendor/*(jquery|handlebars).min.js`,
       // any legacy files that could possibly be proxied in, need to be loaded for karma reference (just not included)
       { pattern: `${appConfig.paths.SRC_SCRIPTS}/**/!(*.babel)*.js`, included: false },
       // bootstraps code and transpiles es6 tests files
