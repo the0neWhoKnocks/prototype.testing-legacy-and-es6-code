@@ -1,3 +1,5 @@
+require('./sanityCheck.js')();
+
 var path = require('path');
 var conf = {
   paths: {
