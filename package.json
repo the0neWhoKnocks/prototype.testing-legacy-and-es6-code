@@ -6,6 +6,10 @@
     "postinstall": "bash ./.bin/npm-postinstall.sh",
     "test": "karma start ./karma.conf.js"
   },
+  "engines": {
+    "node": ">=4.5.0"
+  },
+  "engineStrict" : true,
   "author": "Trevor Lemon",
   "license": "ISC",
   "devDependencies": {

@@ -91,7 +91,7 @@ module.exports = function(karmaConfig) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      '**/karma.bootstrap.babel.js': ['webpack'], // use Webpack to transpile es6 files
+      '**/karma.bootstrap.babel.js': ['webpack'] // use Webpack to transpile es6 files
     },
     
     proxies: {
