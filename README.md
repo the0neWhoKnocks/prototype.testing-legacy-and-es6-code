@@ -39,6 +39,18 @@ npm test -- --halp
 ./node_modules/.bin/karma start ./karma.conf.js --halp
 ```
 
+If you want to run individual test files you can execute the below.
+
+```sh
+npm test -- -f Es6Class
+
+# Or maybe you need to run multiple files
+
+npm test -- -f es5/Es5Class,Es6Class
+
+# The preceding directory isn't necessary unless the test files share the same name.
+```
+
 ---
 
 ## Notes

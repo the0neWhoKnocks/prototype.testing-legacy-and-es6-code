@@ -1,3 +1,4 @@
+var fs = require('fs');
 var path = require('path');
 var flags = require('minimist')(process.argv.slice(2));
 var appConfig = require('./app.conf.js');
@@ -10,6 +11,7 @@ var logLevels = {
 };
 var logOpts = ['debug', 'disable', 'error', 'info', 'warn'];
 var karmaPort = 9876;
+var testsLoaderFileName = 'karma.testsLoader.babel.js';
 
 // == parse the flags ==========================================================
 for(var key in flags){
@@ -19,6 +21,11 @@ for(var key in flags){
     case 'b' :
     case 'browser' :
       flags.browser = val;
+      break;
+    
+    case 'f' :
+    case 'file' :
+      flags.file = val.split(',');
       break;
     
     case 'l' :
@@ -40,6 +47,8 @@ for(var key in flags){
     case 'h' :
     case 'halp' :
       var msg = "\n Options :\n\n";
+          msg += " -f, --file   Allows you to run a specific test file or files.\n";
+          msg += "              Example `-f ClassName` or `-f parent1/ClassName,parent2/ClassName`\n";
           msg += " -h, --halp   Displays available commands.\n";
           msg += ` -l, --log    Sets the type of logging output, available options are: ${logOpts.join(', ')}.\n`;
           msg += " -w, --watch  Watches for changes in tests, if any are found, the tests will be re-ran.";
@@ -51,6 +60,29 @@ for(var key in flags){
 };
 
 // == setup the config =========================================================
+
+// Generate the testsLoader so that you can use the `-f` flag. The file has to
+// be generated so that the file pattern can be set. If a physical file doesn't
+// exists Karma won't be able to load the file.
+var testsPattern;
+if( flags.file ){
+  testsPattern = new RegExp(`(${flags.file.join('\.test\.js|')}\.test\.js)$`);
+}else{
+  testsPattern = /\.test\.js$/;
+}
+var testLoaderContent = `
+// Load all the tests files here so they can be transpiled.
+// Note that if you set \`useSubdirectories\` (second arg) to \`true\` and there aren't any, it'll fail.
+const testFiles = require.context('TEST_FILES/', true, ${testsPattern});
+
+// Run the loaded files.
+testFiles.keys().forEach(testFiles);
+`;
+fs.writeFile(`./${testsLoaderFileName}`, testLoaderContent, function(err){
+  if(err) throw Error("Couldn't create testsLoader file.");
+}); 
+
+
 module.exports = function(karmaConfig) {
   var config = {
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -67,7 +99,12 @@ module.exports = function(karmaConfig) {
       // any legacy files that could possibly be proxied in, need to be loaded for karma reference (just not included)
       { pattern: `${appConfig.paths.SRC_SCRIPTS}/**/!(*.babel)*.js`, included: false },
       // bootstraps code and transpiles es6 tests files
-      `${appConfig.paths.SRC_SCRIPTS}/karma.bootstrap.babel.js`
+      `${appConfig.paths.APP_ROOT}/karma.bootstrap.babel.js`,
+      
+      // load any extra files here
+      
+      // load the generated `test files loader` file
+      `${appConfig.paths.APP_ROOT}/${testsLoaderFileName}`,
     ],
 
     // list of files to exclude
@@ -219,6 +256,9 @@ module.exports = function(karmaConfig) {
     // how many browser should be started simultaneous
     concurrency: Infinity
   };
+  
+  // add the testLoader here since the name of the file is a var.
+  config.preprocessors[`**/${testsLoaderFileName}`] = ['webpack'];
   
   // set the final config
   karmaConfig.set(config);
