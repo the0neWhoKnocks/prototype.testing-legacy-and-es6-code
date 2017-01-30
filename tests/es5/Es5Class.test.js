@@ -5,7 +5,7 @@ import 'SRC_SCRIPTS/es5/Es5Class.js';
  * and the other view be your test file.
  */  
 describe('Es5Class', () => {
-  let sandbox, initStub, testClass;
+  let sandbox, logStub, testClass;
   
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -14,10 +14,10 @@ describe('Es5Class', () => {
      * For methods that execute within a constructor you'll need to stub them
      * out on the prototype to ensure they don't execute.
      */
-    initStub = sandbox.stub(window.namespace.Es5Class.prototype, 'init');
+    logStub = sandbox.stub(bizLib.util, 'log');
     
     
-    testClass = new window.namespace.Es5Class();
+    testClass = new bizLib.Es5Class();
   });
   
   afterEach(() => {
@@ -25,34 +25,25 @@ describe('Es5Class', () => {
   });
   
   it("should be defined", () => {
-    testClass.should.be.a.function;
-    initStub.should.be.calledWith(undefined);
+    testClass.should.be.an.instanceOf(bizLib.Es5Class);
   });
   
   describe('init', () => {
-    /**
-     * Since `init` was stubbed out above, we now need to restore it so it can
-     * be tested here.
-     */
-    beforeEach(() => {
-      initStub.restore();
-    });
-    
     it("should initialize the component", () => {
-      const logStub = sandbox.stub(window.namespace.util, 'log');
       const opts = {
-        namespace: 'test'
+        namespace: 'test',
+        defaultText: 'Goodbye World'
       };
+      
+      testClass.init();
+      
+      expect( testClass.namespace ).to.equal( testClass.namespace );
+      logStub.should.be.calledWith('Es5 class initializing', testClass.defaultText);
       
       testClass.init(opts);
       
       expect( testClass.namespace ).to.equal( opts.namespace );
-      logStub.should.be.calledWith('Es5 class initializing');
-      
-      testClass.init();
-      
-      expect( testClass.namespace ).to.equal( 'exampleClass' );
-      logStub.should.be.calledWith('Es5 class initializing');
+      logStub.should.be.calledWith('Es5 class initializing', opts.defaultText);
     });
   });
 });

@@ -1,27 +1,26 @@
-// bootstrapped code
-window.testCtx = {
-  reset: () =>{
+var testCtx = {
+  reset: function(){
     $('body').empty().off();
     console.log('Context reset');
   }
 };
 
-window.namespace = window.namespace || {
+var bizLib = {
   loadedFiles: [],
   load: function(path){
-    if( window.namespace.loadedFiles.indexOf(path) > -1 ){
+    if( bizLib.loadedFiles.indexOf(path) > -1 ){
       return;
     }
     
     var x = new XMLHttpRequest();
     
     x.open('GET', path, false);
-    x.onreadystatechange = () => {
+    x.onreadystatechange = function(){
       if(x.readyState === 4) {
         switch(x.status) {
           case 200:
             eval( x.responseText.trim() );
-            window.namespace.loadedFiles.push(path);
+            bizLib.loadedFiles.push(path);
             break;
         }
       }
@@ -30,3 +29,6 @@ window.namespace = window.namespace || {
     x.send();
   }
 };
+
+window.bizLib = bizLib;
+window.testCtx = testCtx;

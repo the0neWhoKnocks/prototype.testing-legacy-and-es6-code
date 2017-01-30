@@ -1,13 +1,17 @@
 require('./sanityCheck.js')();
 
+function normalizePath(path){
+  return path.replace(/\\/g, '/');
+}
+
 var path = require('path');
 var conf = {
   paths: {
-    APP_ROOT: path.resolve(__dirname),
-    PUBLIC_SCRIPTS: path.resolve(__dirname, 'public/js/'),
-    SRC_SCRIPTS: path.resolve(__dirname, 'src/js/'),
-    TEMPLATES: path.resolve(__dirname, 'src/templates/'),
-    TEST_FILES: path.resolve(__dirname, 'tests/')
+    APP_ROOT: normalizePath(path.resolve(__dirname)),
+    PUBLIC_SCRIPTS: normalizePath(path.resolve(__dirname, 'public/js/')),
+    SRC_SCRIPTS: normalizePath(path.resolve(__dirname, 'src/js/')),
+    TEMPLATES: normalizePath(path.resolve(__dirname, 'src/templates/')),
+    TEST_FILES: normalizePath(path.resolve(__dirname, 'tests/'))
   },
   middleware: {
     webpack: {

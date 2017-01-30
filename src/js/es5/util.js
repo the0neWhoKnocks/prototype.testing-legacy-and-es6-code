@@ -1,4 +1,4 @@
-window.namespace.util = {
+bizLib.util = {
   log: function(){
     console.log.apply(arguments);
   }

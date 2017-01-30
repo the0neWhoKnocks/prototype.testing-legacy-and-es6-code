@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var flags = require('minimist')(process.argv.slice(2));
+var globAll = require('glob-all');
 var appConfig = require('./app.conf.js');
 var logLevels = {
   'debug': 'LOG_DEBUG',
@@ -11,7 +12,7 @@ var logLevels = {
 };
 var logOpts = ['debug', 'disable', 'error', 'info', 'warn'];
 var karmaPort = 9876;
-var testsLoaderFileName = 'karma.testsLoader.babel.js';
+var testsLoaderFileName = 'karma.testsLoader.js';
 
 // == parse the flags ==========================================================
 for(var key in flags){
@@ -61,6 +62,18 @@ for(var key in flags){
 
 // == setup the config =========================================================
 
+// allowing to include specific vendor scripts rather than the whole dir contents
+var vendorScripts = globAll.sync(`${appConfig.paths.PUBLIC_SCRIPTS}/vendor/*(jquery.min|handlebars.min|Class).js`);
+vendorScripts.filter(function(path, ndx){
+  vendorScripts[ndx] = `require('script!${path.replace(appConfig.paths.PUBLIC_SCRIPTS, 'PUBLIC_SCRIPTS')}');`;
+});
+var bootstrap = fs.readFileSync(`${appConfig.paths.APP_ROOT}/karma.bootstrap.js`, 'utf8');
+var srcScripts = globAll.sync(`${appConfig.paths.SRC_SCRIPTS}/**/*.js`);
+srcScripts.filter(function(path, ndx){
+  var loaderPrefix = ( path.indexOf('.babel.js') > -1 ) ? '' : 'script!istanbul-instrumenter!';
+  srcScripts[ndx] = `require('${loaderPrefix}${path.replace(appConfig.paths.SRC_SCRIPTS, 'SRC_SCRIPTS')}');`;
+});
+
 // Generate the testsLoader so that you can use the `-f` flag. The file has to
 // be generated so that the file pattern can be set. If a physical file doesn't
 // exists Karma won't be able to load the file.
@@ -71,9 +84,18 @@ if( flags.file ){
   testsPattern = /\.test\.js$/;
 }
 var testLoaderContent = `
+// loads vendor scripts
+${vendorScripts.join("\n")}
+
+// bootstrap codebase
+${bootstrap}
+
+// loads all scripts in for reference and coverage
+${srcScripts.join("\n")}
+
 // Load all the tests files here so they can be transpiled.
 // Note that if you set \`useSubdirectories\` (second arg) to \`true\` and there aren't any, it'll fail.
-const testFiles = require.context('TEST_FILES/', true, ${testsPattern});
+var testFiles = require.context('TEST_FILES/', true, ${testsPattern});
 
 // Run the loaded files.
 testFiles.keys().forEach(testFiles);
@@ -94,14 +116,8 @@ module.exports = function(karmaConfig) {
 
     // list of files / patterns to load in the browser
     files: [
-      // load any vendor files for use within tests
-      `${appConfig.paths.PUBLIC_SCRIPTS}/vendor/*(jquery|handlebars).min.js`,
       // any legacy files that could possibly be proxied in, need to be loaded for karma reference (just not included)
       { pattern: `${appConfig.paths.SRC_SCRIPTS}/**/!(*.babel)*.js`, included: false },
-      // bootstraps code and transpiles es6 tests files
-      `${appConfig.paths.APP_ROOT}/karma.bootstrap.babel.js`,
-      
-      // load any extra files here
       
       // load the generated `test files loader` file
       `${appConfig.paths.APP_ROOT}/${testsLoaderFileName}`,
@@ -128,7 +144,7 @@ module.exports = function(karmaConfig) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      '**/karma.bootstrap.babel.js': ['webpack'] // use Webpack to transpile es6 files
+      '**/karma.bootstrap.js': ['webpack'] // use Webpack to transpile es6 files
     },
     
     proxies: {
@@ -141,33 +157,15 @@ module.exports = function(karmaConfig) {
     
     webpack: {
       cache: true,
+      devtool: 'inline-source-map',
       resolve: appConfig.webpack.resolve, // exposes path alias' to Webpack
       module: {
         loaders: [
-          // allow for loading of legacy scripts
-          {
-            test: /\.js$/,
-            exclude: [
-              /node_modules/,
-              /.*(?!\.babel)\.js$/
-            ],
-            loader: 'script',
-            query: {
-              plugins: [
-                ['istanbul', { // adds coverage for es5 files
-                  'exclude': [
-                    '**/*.test.js',
-                    '**/karma.bootstrap.babel.js'
-                  ]
-                }]
-              ]
-            }
-          },
           // transpile test & ES6 JS files
           {
-            test: /(\.test|\.babel)?\.js$/,
+            test: /(\.test|\.babel)\.js$/,
             exclude: /node_modules/,
-            loader: 'babel',
+            loader: 'babel-loader',
             query: {
               // slow first build, speedy future builds
               cacheDirectory: true,         
@@ -176,10 +174,10 @@ module.exports = function(karmaConfig) {
               ],
               plugins: [
                 'transform-object-assign', // adds Object.assign
-                ['istanbul', { // adds coverage for es6 files
+                ['babel-plugin-istanbul', { // adds coverage for es6 files
                   'exclude': [
                     '**/*.test.js',
-                    '**/karma.bootstrap.babel.js'
+                    '**/karma.bootstrap.js'
                   ]
                 }]
               ]
@@ -254,7 +252,12 @@ module.exports = function(karmaConfig) {
 
     // Concurrency level
     // how many browser should be started simultaneous
-    concurrency: Infinity
+    concurrency: Infinity,
+    
+    // enable / disable browser logs on terminal
+    browserConsoleLogOptions: {
+      terminal: false
+    },
   };
   
   // add the testLoader here since the name of the file is a var.
