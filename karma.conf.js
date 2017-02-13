@@ -14,6 +14,16 @@ var logOpts = ['debug', 'disable', 'error', 'info', 'warn'];
 var karmaPort = 9876;
 var testsLoaderFileName = 'karma.testsLoader.js';
 
+/**
+ * Checks if the flag was short or long. Used in error states to report to the
+ * user that a specific flag is in error state.
+ *
+ * @param {string} flag - The flag that was passed in.
+ */
+function flagTypeCheck(flag){
+  return ( flag.length > 1 ) ? `--${flag}` : `-${flag}`;
+}
+
 // == parse the flags ==========================================================
 for(var key in flags){
   var val = flags[key];
@@ -36,7 +46,7 @@ for(var key in flags){
         break;
       }
       
-      console.log("\n[ ERROR ] Available options for `--log` are:", logOpts.join(', '));
+      console.log(`\n[ ERROR ] Available options for '${flagTypeCheck(key)}' are:`, logOpts.join(', '));
       process.exit(1);
       break;
     
@@ -76,7 +86,7 @@ srcScripts.filter(function(path, ndx){
 
 // Generate the testsLoader so that you can use the `-f` flag. The file has to
 // be generated so that the file pattern can be set. If a physical file doesn't
-// exists Karma won't be able to load the file.
+// exist, Karma won't be able to load the file.
 var testsPattern;
 if( flags.file ){
   testsPattern = new RegExp(`(${flags.file.join('\.test\.js|')}\.test\.js)$`);
